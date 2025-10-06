@@ -44,15 +44,12 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Configuration from environment variables
-OAUTH_ISSUER_URL = os.environ.get('OAUTH_ISSUER_URL')
-OAUTH_CLIENT_ID = os.environ.get('OAUTH_CLIENT_ID')
-OAUTH_CLIENT_SECRET = os.environ.get('OAUTH_CLIENT_SECRET')
-OAUTH_REDIRECT_URI = os.environ.get('OAUTH_REDIRECT_URI')
+# Note: These will be set via Firebase Functions config or Cloud Run environment variables
+OAUTH_ISSUER_URL = os.environ.get('OAUTH_ISSUER_URL', '')
+OAUTH_CLIENT_ID = os.environ.get('OAUTH_CLIENT_ID', '')
+OAUTH_CLIENT_SECRET = os.environ.get('OAUTH_CLIENT_SECRET', '')
+OAUTH_REDIRECT_URI = os.environ.get('OAUTH_REDIRECT_URI', '')
 CUSTOM_CLAIM_NAME = os.environ.get('CUSTOM_CLAIM_NAME', None)
-
-# Validate configuration
-if not all([OAUTH_ISSUER_URL, OAUTH_CLIENT_ID, OAUTH_CLIENT_SECRET, OAUTH_REDIRECT_URI]):
-    raise ValueError("Missing required environment variables. Check OAUTH_* settings.")
 
 
 def exchange_code_for_tokens(code: str, code_verifier: str) -> Dict[str, Any]:
@@ -225,6 +222,18 @@ def handleOAuthCallback(req: https_fn.Request) -> https_fn.Response:
         - message: Error description
     """
     try:
+        # Validate configuration at runtime
+        if not all([OAUTH_ISSUER_URL, OAUTH_CLIENT_ID, OAUTH_CLIENT_SECRET, OAUTH_REDIRECT_URI]):
+            logger.error("Missing required environment variables")
+            return https_fn.Response(
+                json.dumps({
+                    'error': 'configuration_error',
+                    'message': 'Cloud Function not properly configured. Check environment variables.'
+                }),
+                status=500,
+                headers={'Content-Type': 'application/json'}
+            )
+
         # Parse request body
         request_json = req.get_json(silent=True)
 
