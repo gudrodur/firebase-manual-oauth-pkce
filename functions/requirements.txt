@@ -1,0 +1,17 @@
+# Firebase Admin SDK - For custom token creation and Firestore
+firebase-admin==6.5.0
+
+# Firebase Functions SDK - For Cloud Functions
+firebase-functions==0.4.1
+
+# JWT handling - For ID token verification
+PyJWT[crypto]==2.8.0
+
+# HTTP requests - For OAuth token exchange
+requests==2.31.0
+
+# Google Cloud Storage - For Firebase Admin SDK
+google-cloud-storage==2.18.2
+
+# Environment variables - For local development
+python-dotenv==1.0.1

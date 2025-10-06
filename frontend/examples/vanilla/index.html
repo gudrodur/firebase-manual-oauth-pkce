@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Firebase Manual OAuth with PKCE - Vanilla JS Example</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .container {
+      background: white;
+      border-radius: 12px;
+      padding: 40px;
+      max-width: 500px;
+      width: 100%;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    }
+
+    h1 {
+      font-size: 24px;
+      margin-bottom: 10px;
+      color: #333;
+    }
+
+    p {
+      color: #666;
+      margin-bottom: 30px;
+      line-height: 1.6;
+    }
+
+    .btn {
+      background: #667eea;
+      color: white;
+      border: none;
+      padding: 14px 28px;
+      font-size: 16px;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+      width: 100%;
+      transition: all 0.3s ease;
+    }
+
+    .btn:hover {
+      background: #5568d3;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .user-info {
+      margin-top: 30px;
+      padding: 20px;
+      background: #f8f9fa;
+      border-radius: 8px;
+      border-left: 4px solid #667eea;
+    }
+
+    .user-info h2 {
+      font-size: 18px;
+      margin-bottom: 15px;
+      color: #333;
+    }
+
+    .user-info p {
+      margin: 8px 0;
+      font-size: 14px;
+      color: #555;
+    }
+
+    .user-info strong {
+      color: #333;
+    }
+
+    .error {
+      background: #fee;
+      border-left: 4px solid #f44336;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      color: #c62828;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #666;
+    }
+
+    .spinner {
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid #667eea;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 15px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div id="app">
+      <h1>Firebase Manual OAuth with PKCE</h1>
+      <p>Vanilla JavaScript example using manual OAuth flow with PKCE for Firebase authentication.</p>
+
+      <div id="error-message"></div>
+
+      <div id="login-section">
+        <button id="login-btn" class="btn">Sign In with OAuth Provider</button>
+      </div>
+
+      <div id="user-section" style="display: none;">
+        <div class="user-info">
+          <h2>✅ Authenticated</h2>
+          <p><strong>Display Name:</strong> <span id="user-name"></span></p>
+          <p><strong>Email:</strong> <span id="user-email"></span></p>
+          <p><strong>UID:</strong> <span id="user-uid"></span></p>
+        </div>
+        <button id="logout-btn" class="btn" style="margin-top: 20px;">Sign Out</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+    import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+    import { initOAuthHandler, signInWithOAuth, handleOAuthCallback, isOAuthCallback } from '../../auth/oauth-handler.js';
+    import { firebaseConfig, oauthConfig } from './config.js';
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    // Initialize OAuth handler
+    initOAuthHandler(oauthConfig);
+
+    // DOM elements
+    const loginSection = document.getElementById('login-section');
+    const userSection = document.getElementById('user-section');
+    const loginBtn = document.getElementById('login-btn');
+    const logoutBtn = document.getElementById('logout-btn');
+    const errorMessage = document.getElementById('error-message');
+    const userName = document.getElementById('user-name');
+    const userEmail = document.getElementById('user-email');
+    const userUid = document.getElementById('user-uid');
+
+    // Show error message
+    function showError(message) {
+      errorMessage.innerHTML = `<div class="error">${message}</div>`;
+    }
+
+    // Clear error message
+    function clearError() {
+      errorMessage.innerHTML = '';
+    }
+
+    // Update UI based on auth state
+    function updateUI(user) {
+      if (user) {
+        // User is signed in
+        userName.textContent = user.displayName || 'N/A';
+        userEmail.textContent = user.email || 'N/A';
+        userUid.textContent = user.uid;
+
+        loginSection.style.display = 'none';
+        userSection.style.display = 'block';
+      } else {
+        // User is signed out
+        loginSection.style.display = 'block';
+        userSection.style.display = 'none';
+      }
+    }
+
+    // Handle OAuth callback (if this page is the callback)
+    if (isOAuthCallback()) {
+      document.getElementById('app').innerHTML = '<div class="loading"><div class="spinner"></div><p>Completing authentication...</p></div>';
+
+      try {
+        const { user, returnUrl } = await handleOAuthCallback();
+        console.log('✅ Authenticated:', user);
+
+        // Redirect to return URL or reload current page
+        if (returnUrl) {
+          window.location.href = returnUrl;
+        } else {
+          window.location.href = window.location.pathname;
+        }
+      } catch (error) {
+        console.error('❌ OAuth callback error:', error);
+        showError(`Authentication failed: ${error.message}`);
+      }
+    }
+
+    // Login button click handler
+    loginBtn.addEventListener('click', async () => {
+      try {
+        clearError();
+        loginBtn.disabled = true;
+        loginBtn.textContent = 'Redirecting...';
+
+        await signInWithOAuth({
+          returnUrl: window.location.href
+        });
+      } catch (error) {
+        console.error('❌ Login error:', error);
+        showError(`Login failed: ${error.message}`);
+        loginBtn.disabled = false;
+        loginBtn.textContent = 'Sign In with OAuth Provider';
+      }
+    });
+
+    // Logout button click handler
+    logoutBtn.addEventListener('click', async () => {
+      try {
+        clearError();
+        logoutBtn.disabled = true;
+        logoutBtn.textContent = 'Signing out...';
+
+        await signOut(auth);
+        console.log('✅ Signed out');
+
+        logoutBtn.disabled = false;
+        logoutBtn.textContent = 'Sign Out';
+      } catch (error) {
+        console.error('❌ Logout error:', error);
+        showError(`Logout failed: ${error.message}`);
+        logoutBtn.disabled = false;
+        logoutBtn.textContent = 'Sign Out';
+      }
+    });
+
+    // Listen for auth state changes
+    onAuthStateChanged(auth, (user) => {
+      updateUI(user);
+    });
+
+    // Check for error in URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const error = urlParams.get('error');
+    if (error) {
+      showError(`Authentication error: ${error}`);
+    }
+  </script>
+</body>
+</html>
