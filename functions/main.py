@@ -121,6 +121,8 @@ def verify_id_token(id_token: str) -> Dict[str, Any]:
     )
 
     logger.info(f"Token verified for subject: {decoded_token.get('sub')}")
+    logger.info(f"ID token claims: {list(decoded_token.keys())}")
+    logger.info(f"Available claims: email={decoded_token.get('email')}, name={decoded_token.get('name')}, national_id={decoded_token.get('national_id')}, phone={decoded_token.get('phone_number')}")
 
     return decoded_token
 
