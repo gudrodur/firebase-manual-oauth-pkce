@@ -82,6 +82,7 @@ def exchange_code_for_tokens(code: str, code_verifier: str, redirect_uri: str = 
     }
 
     logger.info(f"Exchanging code for tokens at {token_url}")
+    logger.info(f"Using redirect_uri: {effective_redirect_uri}")
 
     response = requests.post(token_url, data=payload, timeout=10)
     response.raise_for_status()
