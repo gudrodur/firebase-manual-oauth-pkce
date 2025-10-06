@@ -15,18 +15,12 @@
     }
   ],
   "hosting": {
-    "public": "frontend/examples/vanilla",
+    "public": "public",
     "ignore": [
       "firebase.json",
       "**/.*",
       "**/node_modules/**",
       "**/*.example.js"
-    ],
-    "rewrites": [
-      {
-        "source": "**",
-        "destination": "/index.html"
-      }
     ],
     "headers": [
       {
