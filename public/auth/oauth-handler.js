@@ -27,7 +27,7 @@
  *   await handleOAuthCallback();
  */
 
-import { getAuth, signInWithCustomToken } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+import { getAuth, signInWithCustomToken } from 'firebase/auth';
 
 // Configuration storage
 let oauthConfig = null;
@@ -206,7 +206,8 @@ export async function handleOAuthCallback() {
       },
       body: JSON.stringify({
         code: code,
-        codeVerifier: storedVerifier
+        codeVerifier: storedVerifier,
+        redirectUri: oauthConfig.redirectUri
       })
     });
 

@@ -52,13 +52,14 @@ OAUTH_REDIRECT_URI = os.environ.get('OAUTH_REDIRECT_URI', '')
 CUSTOM_CLAIM_NAME = os.environ.get('CUSTOM_CLAIM_NAME', None)
 
 
-def exchange_code_for_tokens(code: str, code_verifier: str) -> Dict[str, Any]:
+def exchange_code_for_tokens(code: str, code_verifier: str, redirect_uri: str = None) -> Dict[str, Any]:
     """
     Exchange authorization code for tokens using PKCE verifier.
 
     Args:
         code: Authorization code from OAuth provider
         code_verifier: PKCE code verifier from frontend
+        redirect_uri: Optional redirect URI used during authorization (defaults to OAUTH_REDIRECT_URI)
 
     Returns:
         Token response containing id_token, access_token, etc.
@@ -68,13 +69,16 @@ def exchange_code_for_tokens(code: str, code_verifier: str) -> Dict[str, Any]:
     """
     token_url = f"{OAUTH_ISSUER_URL}/oidc/token"
 
+    # Use provided redirect_uri or fall back to environment variable
+    effective_redirect_uri = redirect_uri or OAUTH_REDIRECT_URI
+
     payload = {
         'grant_type': 'authorization_code',
         'code': code,
         'code_verifier': code_verifier,
         'client_id': OAUTH_CLIENT_ID,
         'client_secret': OAUTH_CLIENT_SECRET,
-        'redirect_uri': OAUTH_REDIRECT_URI
+        'redirect_uri': effective_redirect_uri
     }
 
     logger.info(f"Exchanging code for tokens at {token_url}")
@@ -247,6 +251,7 @@ def handleOAuthCallback(req: https_fn.Request) -> https_fn.Response:
 
         code = request_json.get('code')
         code_verifier = request_json.get('codeVerifier')
+        redirect_uri = request_json.get('redirectUri')
 
         if not code or not code_verifier:
             logger.error("Missing required parameters")
@@ -259,7 +264,7 @@ def handleOAuthCallback(req: https_fn.Request) -> https_fn.Response:
         logger.info("Processing OAuth callback")
 
         # Step 1: Exchange authorization code for tokens (with PKCE verifier)
-        token_response = exchange_code_for_tokens(code, code_verifier)
+        token_response = exchange_code_for_tokens(code, code_verifier, redirect_uri)
         id_token = token_response.get('id_token')
 
         if not id_token:

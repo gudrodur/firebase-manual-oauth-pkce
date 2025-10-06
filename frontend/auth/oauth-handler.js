@@ -206,7 +206,8 @@ export async function handleOAuthCallback() {
       },
       body: JSON.stringify({
         code: code,
-        codeVerifier: storedVerifier
+        codeVerifier: storedVerifier,
+        redirectUri: oauthConfig.redirectUri
       })
     });
 
