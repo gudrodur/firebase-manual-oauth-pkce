@@ -104,7 +104,8 @@ def verify_id_token(id_token: str) -> Dict[str, Any]:
         jwt.InvalidTokenError: If token verification fails
     """
     # Fetch JWKS from OAuth provider
-    jwks_url = f"{OAUTH_ISSUER_URL}/.well-known/jwks.json"
+    # Try standard OIDC discovery first, fall back to direct JWKS URL
+    jwks_url = f"{OAUTH_ISSUER_URL}/oidc/jwks"
     jwks_client = PyJWKClient(jwks_url)
 
     # Get signing key from token header
