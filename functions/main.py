@@ -161,9 +161,13 @@ def create_or_update_user(claims: Dict[str, Any]) -> str:
     # Add custom claim if configured
     if CUSTOM_CLAIM_NAME and CUSTOM_CLAIM_NAME in claims:
         profile_data[CUSTOM_CLAIM_NAME] = claims[CUSTOM_CLAIM_NAME]
+        logger.info(f"Added custom claim {CUSTOM_CLAIM_NAME}: {claims[CUSTOM_CLAIM_NAME]}")
+    else:
+        logger.warning(f"Custom claim {CUSTOM_CLAIM_NAME} not found in claims. Available: {list(claims.keys())}")
 
     # Remove None values
     profile_data = {k: v for k, v in profile_data.items() if v is not None}
+    logger.info(f"Final profile data being saved: {json.dumps(profile_data, default=str)}")
 
     # Create or update user profile
     user_ref = db.collection('users').document(auth_uid)
@@ -266,13 +270,18 @@ def handleOAuthCallback(req: https_fn.Request) -> https_fn.Response:
             )
 
         logger.info("Processing OAuth callback")
+        logger.info(f"Received code (first 10 chars): {code[:10]}...")
+        logger.info(f"Redirect URI: {redirect_uri}")
 
         # Step 1: Exchange authorization code for tokens (with PKCE verifier)
         token_response = exchange_code_for_tokens(code, code_verifier, redirect_uri)
+        logger.info(f"Token response keys: {list(token_response.keys())}")
+
         id_token = token_response.get('id_token')
 
         if not id_token:
             logger.error("Token response missing id_token")
+            logger.error(f"Full token response: {token_response}")
             return https_fn.Response(
                 json.dumps({'error': 'token_error', 'message': 'No ID token received'}),
                 status=500,
@@ -281,12 +290,15 @@ def handleOAuthCallback(req: https_fn.Request) -> https_fn.Response:
 
         # Step 2: Verify ID token from OAuth provider
         decoded_claims = verify_id_token(id_token)
+        logger.info(f"ALL CLAIMS: {json.dumps(decoded_claims, indent=2)}")
 
         # Step 3: Create or update user profile in Firestore
         uid = create_or_update_user(decoded_claims)
+        logger.info(f"Created/updated user with UID: {uid}")
 
         # Step 4: Create Firebase custom token
         custom_token = create_custom_token(uid, decoded_claims)
+        logger.info(f"Custom token created successfully")
 
         # Step 5: Return custom token to frontend
         return https_fn.Response(
