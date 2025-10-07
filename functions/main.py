@@ -155,6 +155,7 @@ def create_or_update_user(claims: Dict[str, Any]) -> str:
         'name': claims.get('name'),
         'given_name': claims.get('given_name'),
         'family_name': claims.get('family_name'),
+        'phone_number': claims.get('phone_number'),
         'updated_at': firestore.SERVER_TIMESTAMP
     }
 

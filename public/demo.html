@@ -198,6 +198,7 @@
           <h2>✅ Successfully Authenticated!</h2>
           <p><strong>Name:</strong> <span id="user-name"></span></p>
           <p><strong>Email:</strong> <span id="user-email"></span></p>
+          <p><strong>Phone:</strong> <span id="user-phone"></span></p>
           <p><strong>Kennitala:</strong> <span id="user-kennitala"></span></p>
           <p><strong>Firebase UID:</strong> <span id="user-uid"></span></p>
         </div>
@@ -248,6 +249,7 @@
     const errorMessage = document.getElementById('error-message');
     const userName = document.getElementById('user-name');
     const userEmail = document.getElementById('user-email');
+    const userPhone = document.getElementById('user-phone');
     const userKennitala = document.getElementById('user-kennitala');
     const userUid = document.getElementById('user-uid');
 
@@ -274,6 +276,7 @@
 
           userName.textContent = userData?.name || 'N/A';
           userEmail.textContent = userData?.email || 'N/A';
+          userPhone.textContent = userData?.phone_number || 'N/A';
           userKennitala.textContent = idTokenResult.claims.national_id || userData?.national_id || 'N/A';
           userUid.textContent = user.uid;
         } catch (error) {
@@ -281,6 +284,7 @@
           // Fallback to token claims only
           userName.textContent = user.displayName || 'N/A';
           userEmail.textContent = user.email || 'N/A';
+          userPhone.textContent = 'N/A';
           userKennitala.textContent = idTokenResult.claims.national_id || 'N/A';
           userUid.textContent = user.uid;
         }
