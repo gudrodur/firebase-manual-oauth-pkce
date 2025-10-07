@@ -167,6 +167,93 @@
       font-weight: 600;
       margin-left: 8px;
     }
+
+    .debug-section {
+      margin-top: 30px;
+      background: #f8f9fa;
+      border-radius: 8px;
+      padding: 20px;
+    }
+
+    .debug-section h3 {
+      margin: 0 0 15px 0;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .debug-logs {
+      background: #1e1e1e;
+      color: #d4d4d4;
+      border-radius: 4px;
+      padding: 15px;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      max-height: 400px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+
+    .debug-log-entry {
+      margin-bottom: 8px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #333;
+    }
+
+    .debug-log-entry:last-child {
+      border-bottom: none;
+      margin-bottom: 0;
+      padding-bottom: 0;
+    }
+
+    .log-time {
+      color: #858585;
+      font-size: 11px;
+    }
+
+    .log-level {
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 11px;
+      font-weight: bold;
+      margin-right: 8px;
+    }
+
+    .log-level-info {
+      background: #0e639c;
+      color: white;
+    }
+
+    .log-level-success {
+      background: #107c10;
+      color: white;
+    }
+
+    .log-level-error {
+      background: #d13438;
+      color: white;
+    }
+
+    .log-level-warn {
+      background: #ca5010;
+      color: white;
+    }
+
+    .clear-logs-btn {
+      background: #6c757d;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 13px;
+    }
+
+    .clear-logs-btn:hover {
+      background: #5a6268;
+    }
   </style>
 </head>
 <body>
@@ -203,6 +290,17 @@
           <p><strong>Firebase UID:</strong> <span id="user-uid"></span></p>
         </div>
         <button id="logout-btn" class="btn" style="margin-top: 20px;">Sign Out</button>
+      </div>
+
+      <!-- Debug Log Viewer -->
+      <div class="debug-section">
+        <h3>
+          <span>🐛 Debug Logs</span>
+          <button id="clear-logs-btn" class="clear-logs-btn">Clear Logs</button>
+        </h3>
+        <div id="debug-logs" class="debug-logs">
+          <div class="log-time">Logs will appear here...</div>
+        </div>
       </div>
     </div>
   </div>
@@ -252,6 +350,51 @@
     const userPhone = document.getElementById('user-phone');
     const userKennitala = document.getElementById('user-kennitala');
     const userUid = document.getElementById('user-uid');
+    const debugLogs = document.getElementById('debug-logs');
+    const clearLogsBtn = document.getElementById('clear-logs-btn');
+
+    // Debug Logger
+    const logger = {
+      log(level, message, data = null) {
+        const now = new Date();
+        const timeStr = now.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit', fractional: 3 });
+
+        const logEntry = document.createElement('div');
+        logEntry.className = 'debug-log-entry';
+
+        let logHTML = `<span class="log-time">${timeStr}</span> <span class="log-level log-level-${level}">${level.toUpperCase()}</span> ${message}`;
+
+        if (data) {
+          logHTML += `\n${JSON.stringify(data, null, 2)}`;
+        }
+
+        logEntry.innerHTML = logHTML;
+
+        // Remove placeholder if exists
+        if (debugLogs.querySelector('.log-time') && debugLogs.children.length === 1) {
+          debugLogs.innerHTML = '';
+        }
+
+        debugLogs.appendChild(logEntry);
+        debugLogs.scrollTop = debugLogs.scrollHeight;
+
+        // Also log to console
+        console.log(`[${level.toUpperCase()}]`, message, data || '');
+      },
+      info(message, data) { this.log('info', message, data); },
+      success(message, data) { this.log('success', message, data); },
+      warn(message, data) { this.log('warn', message, data); },
+      error(message, data) { this.log('error', message, data); }
+    };
+
+    // Clear logs button
+    clearLogsBtn.addEventListener('click', () => {
+      debugLogs.innerHTML = '<div class="log-time">Logs cleared...</div>';
+      logger.info('Logs cleared by user');
+    });
+
+    // Initialize logging
+    logger.info('Demo page loaded');
 
     // Show error message
     function showError(message) {
@@ -267,12 +410,16 @@
     async function updateUI(user) {
       if (user) {
         // User is signed in
+        logger.info('User authenticated', { uid: user.uid });
         const idTokenResult = await user.getIdTokenResult();
+        logger.info('Token claims retrieved', { claims: idTokenResult.claims });
 
         // Fetch user profile from Firestore (where Cloud Function stores it)
         try {
+          logger.info('Fetching user profile from Firestore...');
           const userDoc = await getDoc(doc(db, 'users', user.uid));
           const userData = userDoc.data();
+          logger.success('User profile loaded', userData);
 
           userName.textContent = userData?.name || 'N/A';
           userEmail.textContent = userData?.email || 'N/A';
@@ -280,7 +427,7 @@
           userKennitala.textContent = idTokenResult.claims.national_id || userData?.national_id || 'N/A';
           userUid.textContent = user.uid;
         } catch (error) {
-          console.error('Error fetching user profile:', error);
+          logger.error('Error fetching user profile', { error: error.message });
           // Fallback to token claims only
           userName.textContent = user.displayName || 'N/A';
           userEmail.textContent = user.email || 'N/A';
@@ -293,6 +440,7 @@
         userSection.style.display = 'block';
       } else {
         // User is signed out
+        logger.info('No user authenticated');
         loginSection.style.display = 'block';
         userSection.style.display = 'none';
       }
@@ -321,15 +469,17 @@
     // Login button click handler
     loginBtn.addEventListener('click', async () => {
       try {
+        logger.info('Login button clicked');
         clearError();
         loginBtn.disabled = true;
         loginBtn.textContent = 'Redirecting to Kenni.is...';
 
+        logger.info('Initiating OAuth flow with PKCE...');
         await signInWithOAuth({
           returnUrl: window.location.href
         });
       } catch (error) {
-        console.error('❌ Login error:', error);
+        logger.error('Login error', { error: error.message });
         showError(error.message);
         loginBtn.disabled = false;
         loginBtn.textContent = '🇮🇸 Sign In with Kenni.is';
@@ -339,17 +489,18 @@
     // Logout button click handler
     logoutBtn.addEventListener('click', async () => {
       try {
+        logger.info('Logout button clicked');
         clearError();
         logoutBtn.disabled = true;
         logoutBtn.textContent = 'Signing out...';
 
         await signOut(auth);
-        console.log('✅ Signed out');
+        logger.success('User signed out');
 
         logoutBtn.disabled = false;
         logoutBtn.textContent = 'Sign Out';
       } catch (error) {
-        console.error('❌ Logout error:', error);
+        logger.error('Logout error', { error: error.message });
         showError(error.message);
         logoutBtn.disabled = false;
         logoutBtn.textContent = 'Sign Out';

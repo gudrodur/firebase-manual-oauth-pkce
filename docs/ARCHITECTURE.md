@@ -203,6 +203,7 @@ We bypass Firebase's OIDC provider entirely and implement the OAuth flow manuall
   name: "Full Name",
   given_name: "First",
   family_name: "Last",
+  phone_number: "+1234567890",  // Phone number (if provided by OAuth)
   national_id: "123456-7890",  // Custom claim (optional)
   updated_at: Timestamp
 }

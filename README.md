@@ -54,8 +54,9 @@ This repository implements a **Manual OAuth Flow** that bypasses Firebase's OIDC
 
 - ✅ **Full PKCE Support** - Works with OAuth providers requiring PKCE
 - ✅ **Secure Token Exchange** - Server-side verification and custom token generation
-- ✅ **User Profile Management** - Automatic Firestore profile creation
-- ✅ **Custom Claims** - Support for provider-specific claims (e.g., national ID)
+- ✅ **User Profile Management** - Automatic Firestore profile creation with full user data
+- ✅ **Custom Claims** - Support for provider-specific claims (e.g., national ID, phone number)
+- ✅ **Complete User Data** - Captures name, email, phone number, and custom claims
 - ✅ **Production Ready** - Deployed and tested in production environment
 - ✅ **Framework Agnostic** - Works with React, Vue, Vanilla JS, or any frontend
 
