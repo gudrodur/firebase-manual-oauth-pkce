@@ -312,6 +312,10 @@
     import { initOAuthHandler, signInWithOAuth, handleOAuthCallback, isOAuthCallback } from './auth/oauth-handler.js';
 
     // Firebase configuration
+    // NOTE: Firebase Web API Keys are PUBLIC by design and safe to commit to git.
+    // This key only identifies the Firebase project - it does NOT grant access.
+    // Security is enforced by: Firestore Rules + Authentication + PKCE flow
+    // See: https://firebase.google.com/docs/projects/api-keys
     const firebaseConfig = {
       apiKey: "AIzaSyB1v9eRQzBx1ejoYfqxvPHhifyrmB4ZptY",
       authDomain: "fir-oauth-pkce-demo.firebaseapp.com",
