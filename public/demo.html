@@ -267,7 +267,7 @@
 
         userName.textContent = user.displayName || 'N/A';
         userEmail.textContent = user.email || 'N/A';
-        userKennitala.textContent = idTokenResult.claims.kennitala || 'N/A';
+        userKennitala.textContent = idTokenResult.claims.national_id || 'N/A';
         userUid.textContent = user.uid;
 
         loginSection.style.display = 'none';
