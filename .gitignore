@@ -61,4 +61,6 @@ coverage/
 *.tmp
 .temp/
 /tmp/
-.claude/settings*.json
+
+# Claude Code AI assistant configuration
+.claude/
