@@ -61,6 +61,3 @@ coverage/
 *.tmp
 .temp/
 /tmp/
-
-# Claude Code AI assistant configuration
-.claude/
